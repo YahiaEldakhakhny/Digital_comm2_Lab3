@@ -53,7 +53,7 @@ function MPSK(M)
             Bits=randi([0 1],1,NumberBitsPerFrame);
 
             % Obtaining Symbol bits
-            SymbolBits=reshape(Bits,log2(ModulationOrder),NumberBitsPerFrame/log2(ModulationOrder))';
+            SymbolBits=reshape(Bits,k,NumberBitsPerFrame/k)';
 
 
             % Simulating the square MQAM case only
