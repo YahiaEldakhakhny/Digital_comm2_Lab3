@@ -7,11 +7,12 @@ function MPSK(M)
     close all;
 
     %% Simulation Parameters
-    EbNo_range=[0:2:30];                            %Eb/No range of simulation dB
+    EbNo_range=[0:2:30];                             %Eb/No range of simulation dB
     NumberFramesPerSNR=1e3;                         %Number of frames sent for every SNR value
     ModulationOrder=M;                              %The number of sent waveforms (M)
-    NumberBitsPerFrame=1e3*log2(ModulationOrder);   %Number of bits sent for every frame
-    ModulationType=3;                               %Modulation type 1:MASK, 2:MPSK, 3:MQAM
+    k = log2(ModulationOrder);
+    NumberBitsPerFrame=1e3*k;                  %Number of bits sent for every frame
+    ModulationType=3;                                 %Modulation type 1:MASK, 2:MPSK, 3:MQAM
 
 
     %% BER Loop
