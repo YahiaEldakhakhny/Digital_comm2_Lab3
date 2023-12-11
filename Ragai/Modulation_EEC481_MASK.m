@@ -9,7 +9,7 @@ close all;
 %% Simulation Parameters
 EbNo_range=[0:2:30];                            %Eb/No range of simulation dB
 NumberFramesPerSNR=1e3;                         %Number of frames sent for every SNR value
-ModulationOrder=4;
+ModulationOrder=8;
 NumberBitsPerFrame=1e3*log2(ModulationOrder);   %Number of bits sent for every frame
 ModulationType=1;                               %Modulation type 1:MASK, 2:MPSK, 3:MQAM
 
@@ -66,7 +66,7 @@ for EbNo=EbNo_range
         SymbolIndex_branch1=binaryVectorToDecimal(SymbolBits_branch1)+1;
         
         % Symbol modulation using ASK modulation
-        OutputModulator_branch1=2*(SymbolIndex_branch1)-3-(sqrt(ModulationOrder));
+        OutputModulator_branch1=2*(SymbolIndex_branch1)-1-(ModulationOrder);
         
         
         %% Transmitted Signal
