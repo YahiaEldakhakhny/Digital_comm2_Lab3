@@ -12,7 +12,7 @@ function MPSK(M)
     ModulationOrder=M;                              %The number of sent waveforms (M)
     k = log2(ModulationOrder);
     NumberBitsPerFrame=1e3*k;                  %Number of bits sent for every frame
-    ModulationType=3;                                 %Modulation type 1:MASK, 2:MPSK, 3:MQAM
+    ModulationType=2;                                 %Modulation type 1:MASK, 2:MPSK, 3:MQAM
 
 
     %% BER Loop
@@ -25,11 +25,11 @@ function MPSK(M)
         % Calculating average energy per bit of the modulation scheme
         % In the sequel, we assume Ac^2 Ts/2=1
         % I.e., the constellation diagram contains {..., -5, -3, -1, 1, 3, 5, ...}
-        if ModulationType==1
+        if ModulationType==1    %MASK
             Eb=(ModulationOrder^2-1)/(3*log2(ModulationOrder));
-        elseif ModulationType==2
+        elseif ModulationType==2    %MPSK
             Eb=1/log2(ModulationOrder);
-        elseif ModulationType==3
+        elseif ModulationType==3    %MQAM
             Eb=2*(ModulationOrder-1)/(3*log2(ModulationOrder));
         end
 
