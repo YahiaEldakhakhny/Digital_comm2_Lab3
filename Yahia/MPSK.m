@@ -62,33 +62,25 @@ function MPSK(M)
             % The square MQAM modulator/demodulator can be implemented as two orthogonal
             % sqrt(M)-ASK modulator/demodulator (we use this idea here)
 
-            %% Transmitter Branch 1
-            % Taking first log2(M)/2 bits to branch 1
-            SymbolBits_branch1=SymbolBits(:,[1:log2(ModulationOrder)/2]);
-
-            % Transforming bits into intgers: bianry to decimal conversion
-            SymbolIndex_branch1=bin2dec(string(SymbolBits_branch1))+1;
-
-            % Symbol modulation using ASK modulation
-            OutputModulator_branch1=2*(SymbolIndex_branch1)-1-(sqrt(ModulationOrder));
-
-            %% Transmitter Branch 2
-            % Taking first log2(M)/2 bits to branch 1
-            SymbolBits_branch2=SymbolBits(:,[log2(ModulationOrder)/2+1:end]);
-
-            % Transforming bits into intgers: bianry to decimal conversion
-            SymbolIndex_branch2=bin2dec(string(SymbolBits_branch2))+1;
-
-            % Symbol modulation using ASK modulation
-            OutputModulator_branch2=2*(SymbolIndex_branch2)-1-(sqrt(ModulationOrder));
-
-            %% Transmitted Signal
-            % The transmitted signal takes the in-phase component from branch 1
-            % as real component and the quadrature component from branch 2 as
-            % imaginary component
-            TransmittedSignal=OutputModulator_branch1+1i*OutputModulator_branch2;
-
-
+           %% Transmitter
+           % r is the number of rows in SymbolBits (number of transmitted
+           % symbols)
+           r = size(SymbolBits); r = r(1);
+           % allocate space for symbol index (m)
+           SymbolIndex = zeros(1, r);
+           
+           % Calculate symbol corresponding to each k bits
+           for i = 1:r
+               curr_bit_str = '';
+               for j = 1:k
+                   curr_bit_str = strcat(curr_bit_str, num2str(SymbolBits(i, j)));
+               end
+               SymbolIndex(i) = bin2dec(curr_bit_str);
+           end
+           SymbolIndex = SymbolIndex +1;
+           % Calculate transmitted signal
+           TransmittedSignal = cos(2*pi*(SymbolIndex-1)/ModulationOrder) + 1i* sin(2*pi*(SymbolIndex-1)/ModulationOrder);
+           
             %% Adding Noise to the Transmitted Signal
             % Generating Noise signal with the correct variance corresponding
             % to Eb/No
@@ -97,55 +89,31 @@ function MPSK(M)
             % Adding noise
             ReceivedSignal=TransmittedSignal+Noise;
 
-            %% Receiver Operation: Receiver Branch 1
-            % In-phase component is the real part of the signal
-            ReceivedSignal_branch1=real(ReceivedSignal);
-
-            % Receiver operation is threshold operation
-            % Threshold is {..., -4, -2, 0, 2, 4, ...}
-            for threshold=-sqrt(ModulationOrder)+2:2:sqrt(ModulationOrder)-4
-                DetectedSymbols_branch1((ReceivedSignal_branch1>threshold) &(ReceivedSignal_branch1<=threshold+2))=threshold+1;
+            %% Receiver
+            % Get phase of reciever signal
+            phaseRec = angle(ReceivedSignal);
+            % Adjust phase to be positive (add 2pi to negative phases)
+            phaseRec(phaseRec < 0) = phaseRec(phaseRec < 0) + 2*pi;
+            
+            % Get phase thresholds
+            p = 0:pi/ModulationOrder:2*pi;
+            phaseThresholds = p(2:2:end);
+            
+            % Get detected phases (compare recieved phases with thresholds)
+            for t = 1:length(phaseThresholds)-1
+                threshold = phaseThresholds(t);
+                nextThreshold = phaseThresholds(t+1);
+                phaseRec((phaseRec>threshold) &(phaseRec<=nextThreshold))=(threshold+nextThreshold)/2;
             end
-
-            % Detecting edge symbols
-            DetectedSymbols_branch1(ReceivedSignal_branch1>sqrt(ModulationOrder)-2)=sqrt(ModulationOrder)-1;
-            DetectedSymbols_branch1(ReceivedSignal_branch1<=-sqrt(ModulationOrder)+2)=-sqrt(ModulationOrder)+1;
-
-
-            % Transform detected symbols into symbol index
-            ReceivedSymbolIndex_branch1=(DetectedSymbols_branch1+sqrt(ModulationOrder)+1)/2-1;
-
-            % Transform detected symbols into bits: decimal to binary
-            DetectedBits_branch1=dec2bin(ReceivedSymbolIndex_branch1',log2(ModulationOrder)/2);
-
-            %% Receiver Operation: Receiver Branch 2
-            % Quadrature component is the imaginary part of the signal
-            ReceivedSignal_branch2=imag(ReceivedSignal);
-
-            % Receiver operation is threshold operation
-            % Threshold is {..., -4, -2, 0, 2, 4, ...}
-            for threshold=-sqrt(ModulationOrder)+2:2:sqrt(ModulationOrder)-4
-                DetectedSymbols_branch2((ReceivedSignal_branch2>threshold) &(ReceivedSignal_branch2<=threshold+2))=threshold+1;
-            end
-
-            % Detecting edge symbols
-            DetectedSymbols_branch2(ReceivedSignal_branch2>sqrt(ModulationOrder)-2)=sqrt(ModulationOrder)-1;
-            DetectedSymbols_branch2(ReceivedSignal_branch2<=-sqrt(ModulationOrder)+2)=-sqrt(ModulationOrder)+1;
-
-
-            % Transform detected symbols into symbol index
-            ReceivedSymbolIndex_branch2=(DetectedSymbols_branch2+sqrt(ModulationOrder)+1)/2-1;
-
-            % Transform detected symbols into bits: decimal to binary
-            DetectedBits_branch2=dec2bin(ReceivedSymbolIndex_branch2',log2(ModulationOrder)/2);
-
-            %% Parallel to Serial Operation in Receiver
-            ReceivedBits=[DetectedBits_branch1 DetectedBits_branch2];
-
-            % Serializing output
+            % Outer thresholds
+            phaseRec((phaseRec >= phaseThresholds(end)) | (phaseRec < phaseThresholds(1))) = 0;
+            
+            % Get recieved symbols
+            ReceivedSymbolIndex = round((ModulationOrder .* phaseRec./(2*pi)) +1);
+            
+            % Get recieved bits
+            ReceivedBits = dec2bin(ReceivedSymbolIndex, k);
             ReceivedBits=reshape(ReceivedBits',1,NumberBitsPerFrame);
-
-
             %% BER calculation
             prob_error_frame=sum(xor(Bits,double(ReceivedBits-48)))/NumberBitsPerFrame;
             sum_prob_error=sum_prob_error+prob_error_frame;

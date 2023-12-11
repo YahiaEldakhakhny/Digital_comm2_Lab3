@@ -9,7 +9,7 @@ close all;
 %% Simulation Parameters
 EbNo_range=[0:2:30];                            %Eb/No range of simulation dB
 NumberFramesPerSNR=1e3;                         %Number of frames sent for every SNR value
-ModulationOrder=64;
+ModulationOrder=4;                              %The number of sent waveforms (M)
 NumberBitsPerFrame=1e3*log2(ModulationOrder);   %Number of bits sent for every frame
 ModulationType=3;                               %Modulation type 1:MASK, 2:MPSK, 3:MQAM
 
@@ -64,8 +64,9 @@ for EbNo=EbNo_range
         %% Transmitter Branch 1
         % Taking first log2(M)/2 bits to branch 1
         SymbolBits_branch1=SymbolBits(:,[1:log2(ModulationOrder)/2]);
+        
         % Transforming bits into intgers: bianry to decimal conversion
-        SymbolIndex_branch1=binaryVectorToDecimal(SymbolBits_branch1)+1;
+        SymbolIndex_branch1=bin2dec(string(SymbolBits_branch1))+1;
         
         % Symbol modulation using ASK modulation
         OutputModulator_branch1=2*(SymbolIndex_branch1)-1-(sqrt(ModulationOrder));
@@ -75,7 +76,7 @@ for EbNo=EbNo_range
         SymbolBits_branch2=SymbolBits(:,[log2(ModulationOrder)/2+1:end]);
         
         % Transforming bits into intgers: bianry to decimal conversion
-        SymbolIndex_branch2=binaryVectorToDecimal(SymbolBits_branch2)+1;
+        SymbolIndex_branch2=bin2dec(string(SymbolBits_branch2))+1;
         
         % Symbol modulation using ASK modulation
         OutputModulator_branch2=2*(SymbolIndex_branch2)-1-(sqrt(ModulationOrder));
